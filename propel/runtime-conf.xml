@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+	<propel>
+		<datasources default="disable-instance-pooling-problem">
+			<datasource id="disable-instance-pooling-problem">
+				<adapter>mysql</adapter>
+				<connection>
+					<dsn>mysql:host=10.11.12.14;port=3306;dbname=database;charset=utf8</dsn>
+					<user>user</user>
+					<password>password</password>
+				</connection>
+			</datasource>
+		</datasources>
+	</propel>
+</config>

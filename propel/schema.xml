@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<database name="disable-instance-pooling-problem">
+	<table name="authors" phpName="Author">
+		<column name="id" type="Integer" required="true" autoIncrement="true" primaryKey="true" />
+		<column name="name" type="Varchar" size="128" />
+	</table>
+	<table name="books" phpName="Book">
+		<column name="id" type="Integer" required="true" autoIncrement="true" primaryKey="true" />
+		<column name="author_id" type="Integer" required="true" />
+		<column name="title" type="Varchar" size="128" />
+		<foreign-key foreignTable="authors" phpName="Author" refPhpName="Book">
+			<reference foreign="id" local="author_id" />
+		</foreign-key>
+	</table>
+</database>
