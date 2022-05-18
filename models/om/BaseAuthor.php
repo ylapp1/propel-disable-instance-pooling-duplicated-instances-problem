@@ -916,6 +916,33 @@ abstract class BaseAuthor extends BaseObject implements Persistent
 
                 BookPeer::addSelectColumns($criteria);
                 $this->collBooks = BookPeer::doSelect($criteria, $con);
+
+                // Set up the relations for the case that instance pooling is disabled
+                if (isset($this->fetchedByBook))
+                {
+                    $fetchedByBookHashCode = $this->fetchedByBook->hashCode();
+                    $fetchedByBookIndex = null;
+                    foreach ($this->collBooks as $i => $book)
+                    {
+                        if ($book->hashCode() == $fetchedByBookHashCode)
+                        {
+                            $fetchedByBookIndex = $i;
+                            break;
+                        }
+                    }
+                    if (is_null($fetchedByBookIndex))
+                    {
+                        $this->collBooks[] = $this->fetchedByBook;
+                    }
+                    else
+                    {
+                        $this->collBooks[$fetchedByBookIndex] = $this->fetchedByBook;
+                    }
+                }
+                foreach ($this->collBooks as $book)
+                {
+                    $book->setAuthor($this);
+                }
             }
         } else {
             // criteria has no effect for a new object
@@ -930,12 +957,44 @@ abstract class BaseAuthor extends BaseObject implements Persistent
                 BookPeer::addSelectColumns($criteria);
                 if (!isset($this->lastBookCriteria) || !$this->lastBookCriteria->equals($criteria)) {
                     $this->collBooks = BookPeer::doSelect($criteria, $con);
+
+                    // Set up the relations for the case that instance pooling is disabled
+                    if (isset($this->fetchedByBook))
+                    {
+                        $fetchedByBookHashCode = $this->fetchedByBook->hashCode();
+                        $fetchedByBookIndex = null;
+                        foreach ($this->collBooks as $i => $book)
+                        {
+                            if ($book->hashCode() == $fetchedByBookHashCode)
+                            {
+                                $fetchedByBookIndex = $i;
+                                break;
+                            }
+                        }
+                        if (is_null($fetchedByBookIndex))
+                        {
+                            $this->collBooks[] = $this->fetchedByBook;
+                        }
+                        else
+                        {
+                            $this->collBooks[$fetchedByBookIndex] = $this->fetchedByBook;
+                        }
+                    }
+                    foreach ($this->collBooks as $book)
+                    {
+                        $book->setAuthor($this);
+                    }
                 }
             }
         }
         $this->lastBookCriteria = $criteria;
 
         return $this->collBooks;
+    }
+
+    public function setFetchedByBook(Book $book)
+    {
+        $this->fetchedByBook = $book;
     }
 
     /**

@@ -921,6 +921,7 @@ abstract class BaseBook extends BaseObject implements Persistent
                in the referenced object.
                $this->aAuthor->addBooks($this);
              */
+             $this->aAuthor->setFetchedByBook($this);
         }
 
         return $this->aAuthor;
