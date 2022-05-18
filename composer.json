@@ -1,0 +1,14 @@
+{
+    "name": "test/propel_disable_instance_pooling_problem",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Yannick Lapp",
+            "email": "yannick.lapp@cn-consult.eu"
+        }
+    ],
+    "require": {
+        "propel/propel1": "^1.7"
+    }
+}
