@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  test:
+    build: .
+    volumes:
+      - .:/app
+    depends_on:
+      - database
+    networks:
+      testnetwork:
+        ipv4_address: 10.11.12.13
+
+  database:
+    image: mysql/mysql-server:5.7
+    container_name: database
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: database
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    networks:
+      testnetwork:
+        ipv4_address: 10.11.12.14
+
+networks:
+  testnetwork:
+    ipam:
+      config:
+        - subnet: 10.11.12.0/24
