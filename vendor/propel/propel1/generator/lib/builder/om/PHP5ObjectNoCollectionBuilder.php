@@ -572,8 +572,9 @@ class PHP5ObjectNoCollectionBuilder extends PHP5ObjectBuilder
                undesirable since it could result in an only partially populated collection
                in the referenced object.
                \$this->{$varName}->add" . $this->getRefFKPhpNameAffix($fk, $plural = true) . "(\$this);
-             */";
-        }
+             */
+             \$this->{$varName}->setFetchedBy" . $this->getRefFKPhpNameAffix($fk, false) . "(\$this);";
+		}
 
         $script .= "
         }
@@ -666,6 +667,7 @@ class PHP5ObjectNoCollectionBuilder extends PHP5ObjectBuilder
 
                 $script .= "
                 \$this->$collName = " . $fkPeerBuilder->getPeerClassname() . "::doSelectJoin$relCol2(\$criteria, \$con, \$join_behavior);
+                {$this->addCollRelationsToRelatedRecordsSetup($refFK, $collName, 4)}
             }
         } else {
             // the following code is to determine if a new query is
@@ -686,6 +688,7 @@ class PHP5ObjectNoCollectionBuilder extends PHP5ObjectBuilder
                 $script .= "
             if (!isset(\$this->$lastCriteriaName) || !\$this->" . $lastCriteriaName . "->equals(\$criteria)) {
                 \$this->$collName = " . $fkPeerBuilder->getPeerClassname() . "::doSelectJoin$relCol2(\$criteria, \$con, \$join_behavior);
+                {$this->addCollRelationsToRelatedRecordsSetup($refFK, $collName, 4)}
             }
         }
         \$this->$lastCriteriaName = \$criteria;
@@ -923,6 +926,7 @@ class PHP5ObjectNoCollectionBuilder extends PHP5ObjectBuilder
         $script .= "
                 " . $fkPeerBuilder->getPeerClassname() . "::addSelectColumns(\$criteria);
                 \$this->$collName = " . $fkPeerBuilder->getPeerClassname() . "::doSelect(\$criteria, \$con);
+                {$this->addCollRelationsToRelatedRecordsSetup($refFK, $collName, 4)}
             }
         } else {
             // criteria has no effect for a new object
@@ -946,6 +950,7 @@ class PHP5ObjectNoCollectionBuilder extends PHP5ObjectBuilder
                 " . $fkPeerBuilder->getPeerClassname() . "::addSelectColumns(\$criteria);
                 if (!isset(\$this->$lastCriteriaName) || !\$this->" . $lastCriteriaName . "->equals(\$criteria)) {
                     \$this->$collName = " . $fkPeerBuilder->getPeerClassname() . "::doSelect(\$criteria, \$con);
+                    {$this->addCollRelationsToRelatedRecordsSetup($refFK, $collName, 5)}
                 }
             }
         }
@@ -953,6 +958,14 @@ class PHP5ObjectNoCollectionBuilder extends PHP5ObjectBuilder
 
         return \$this->$collName;
     }
+";
+
+	    $varName = lcfirst($this->getRefFKPhpNameAffix($refFK));
+	    $script .= "
+	public function setFetchedBy" . $this->getRefFKphpNameAffix($refFK, false) . "($className \$$varName)
+	{
+		\$this->fetchedBy" . $this->getRefFKphpNameAffix($refFK, false) . " = \$$varName;
+	}
 ";
     } // addRefererGet()
 
@@ -1014,4 +1027,43 @@ class PHP5ObjectNoCollectionBuilder extends PHP5ObjectBuilder
 ";
     } // addPKRefFKGet()
 
+	private function addCollRelationsToRelatedRecordsSetup(ForeignKey $refFK, $collName, $indentationLevel)
+	{
+		$collEntryName = lcfirst($this->getRefFKPhpNameAffix($refFK));
+
+		$fetchedByPropertyName = "fetchedBy" . $this->getRefFKphpNameAffix($refFK, false);
+		$fetchedByHashCodeVariableName = "fetchedBy" . $this->getRefFKphpNameAffix($refFK, false) . "HashCode";
+		$fetchedByIndexVariableName = "fetchedBy" . $this->getRefFKphpNameAffix($refFK, false) . "Index";
+
+		$code = "
+// Set up the relations for the case that instance pooling is disabled
+if (isset(\$this->$fetchedByPropertyName))
+{
+    \$$fetchedByHashCodeVariableName = \$this->${fetchedByPropertyName}->hashCode();
+    \$$fetchedByIndexVariableName = null;
+    foreach (\$this->$collName as \$i => \$$collEntryName)
+    {
+        if (\${$collEntryName}->hashCode() == \$$fetchedByHashCodeVariableName)
+        {
+            \$$fetchedByIndexVariableName = \$i;
+            break;
+        }
+    }
+    if (is_null(\$$fetchedByIndexVariableName))
+    {
+        \$this->" . $collName . "[] = \$this->$fetchedByPropertyName;
+    }
+    else
+    {
+        \$this->" . $collName . "[\$$fetchedByIndexVariableName] = \$this->$fetchedByPropertyName;
+    }
+}
+foreach (\$this->$collName as \$$collEntryName)
+{
+    \${$collEntryName}->set". $this->getFKPhpNameAffix($refFK) ."(\$this);
+}";
+
+		$indentation = str_repeat(" ", $indentationLevel * 4);
+		return preg_replace("/\n([^\n])/", "\n$indentation$1", $code);
+	}
 } // PHP5ObjectBuilder
